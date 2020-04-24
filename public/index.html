@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+ 
+<html>
+  <head>
+    <title>Android Push Notification Test</title>
+  </head>
+  <body>
+    <header>
+      <h1>Android Push Notification Test</h1>
+    </header>
+    <div>
+      <form method="POST" action="https://maly-tom.web.app/api/send">
+        <div>
+            <label for="token">Token</label><br />
+            <input type="text" name="token" id="token" placeholder="place for token"/>
+          </div>
+        <div>
+          <label for="title">Title</label><br />
+          <input type="text" name="title" id="title" placeholder="Hey there this is a nice notification"/>
+        </div>
+        <div>
+            <label for="body">Body</label><br />
+            <input type="text" name="body" id="body" placeholder="More details about your notification" />
+        </div>
+        <div>
+          <button>Send</button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
