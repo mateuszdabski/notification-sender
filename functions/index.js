@@ -8,6 +8,10 @@ var app = express();
 var bodyParser = require('body-parser');
 var router = express.Router(); 
 var request = require('request');
+const admin = require('firebase-admin');
+admin.initializeApp();
+
+const db = admin.firestore();
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
@@ -65,5 +69,22 @@ function getAccessToken(){
         });
     });
 }
+
+// Check if found devices is already registered app
+exports.checkRegisteredDevices = functions.firestore
+    .document('Shops/{shopId}').onWrite( async (change, context) => {
+        const oShop = change.after.data();
+        const aUserNames = [];
+        return db.collection("Users").get().then(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+                aUserNames.push(doc.data().bluetooth);
+            });
+            for (var i = 0; i < oShop.devices.length; i++) {
+                var oDevice = oShop.devices[i];
+                oDevice.registered = aUserNames.indexOf(oDevice.name) !== -1;
+            }
+            return change.after.ref.set(oShop, {merge: true});
+        });        
+    });
 
 exports.api = functions.https.onRequest(app);
