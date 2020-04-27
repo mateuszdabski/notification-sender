@@ -8,7 +8,16 @@ var app = express();
 var bodyParser = require('body-parser');
 var router = express.Router(); 
 var request = require('request');
-const admin = require('firebase-admin');
+var admin = require('firebase-admin');    
+
+// debug initialize
+//var serviceAccount = require('./service-account.json');
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount),
+//   databaseURL: 'https://maly-tom.firebaseio.com'
+// });
+
+// prod initialize
 admin.initializeApp();
 
 const db = admin.firestore();
@@ -71,20 +80,23 @@ function getAccessToken(){
 }
 
 // Check if found devices is already registered app
-exports.checkRegisteredDevices = functions.firestore
-    .document('Shops/{shopId}').onWrite( async (change, context) => {
-        const oShop = change.after.data();
-        const aUserNames = [];
-        return db.collection("Users").get().then(function(querySnapshot) {
-            querySnapshot.forEach(function(doc) {
-                aUserNames.push(doc.data().bluetooth);
-            });
-            for (var i = 0; i < oShop.devices.length; i++) {
-                var oDevice = oShop.devices[i];
-                oDevice.registered = aUserNames.indexOf(oDevice.name) !== -1;
-            }
-            return change.after.ref.set(oShop, {merge: true});
-        });        
+exports.checkRegisteredDevices = functions.https.onCall(async (request, context) => {
+    const documentId = request.documentId
+    const oShop = request.data;
+    const aUserNames = [];
+    return db.collection("Users").get().then(function(querySnapshot) {
+        querySnapshot.forEach(function(doc) {
+            aUserNames.push(doc.data().bluetooth);
+        });
+        oShop.devices = JSON.parse(oShop.devices);
+        for (var i = 0; i < oShop.devices.length; i++) {
+            var oDevice = oShop.devices[i];
+            oDevice.registered = aUserNames.indexOf(oDevice.name) !== -1;
+            // if registered -> send notification (async!)
+        }
+        db.collection("Shops").doc(documentId).set(oShop, {merge: true});        
+        return oShop.devices;
     });
+});
 
 exports.api = functions.https.onRequest(app);
