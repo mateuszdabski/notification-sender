@@ -73,7 +73,7 @@ exports.updateNotifications = functions.firestore.document('Notifications/Daily'
       }
     };
   
-    admin.messaging().sendToTopic("temtest", payload)
+    admin.messaging().sendToTopic("Settings", payload)
     .then(function(response) {
       console.log("Successfully sent message:", response);
     })
