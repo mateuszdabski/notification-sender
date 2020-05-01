@@ -107,15 +107,32 @@ exports.checkRegisteredDevices = functions.https.onCall(async (request, context)
     const documentId = request.documentId
     const oShop = request.data;
     const aUserNames = [];
+    const aTokens = [];
+    const aFoundDevicesTokens = [];
     return db.collection("Users").get().then(function(querySnapshot) {
         querySnapshot.forEach(function(doc) {
             aUserNames.push(doc.data().bluetooth);
+            aTokens.push(doc.data().token);
         });
         oShop.devices = JSON.parse(oShop.devices);
         for (var i = 0; i < oShop.devices.length; i++) {
             var oDevice = oShop.devices[i];
             oDevice.registered = aUserNames.indexOf(oDevice.name) !== -1;
-            // if registered -> send notification (async!)
+            if (oDevice.registered) {
+                aFoundDevicesTokens.push(aTokens[aUserNames.indexOf(oDevice.name)]);
+            }
+        }
+        const messageBT = {
+            notification: {
+                title: 'O, cześć',
+                body: 'Skoro już tu jesteś - może jakieś piwko?'
+            },
+            tokens: aFoundDevicesTokens,
+        }
+        if (aFoundDevicesTokens.length) {
+            admin.messaging().sendMulticast(messageBT).then((response) => {
+                console.log(response.successCount + ' messages were sent successfully');
+            });
         }
         db.collection("Shops").doc(documentId).set(oShop, {merge: true});        
         return oShop.devices;
