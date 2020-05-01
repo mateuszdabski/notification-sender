@@ -18,7 +18,7 @@ var admin = require('firebase-admin');
 // });
 
 // prod initialize
-admin.initializeApp();
+admin.initializeApp(functions.config().firebase);
 
 const db = admin.firestore();
 
@@ -58,6 +58,29 @@ router.post('/send', function(req, res){
 
 app.use('/api', router);
 
+exports.updateNotifications = functions.firestore.document('Notifications/Daily').onUpdate((change, context) => {
+    const newValue = change.after.data();
+    pushMessage(newValue);
+    return true;
+  });
+
+  function pushMessage(newValue) {
+    var payload = {
+      data: {
+        title: newValue.title,
+        message: newValue.message,
+        time: newValue.time,
+      }
+    };
+  
+    admin.messaging().sendToTopic("temtest", payload)
+    .then(function(response) {
+      console.log("Successfully sent message:", response);
+    })
+    .catch(function(error) {
+      console.log("Error sending message:", error);
+    });
+  }
 
 function getAccessToken(){
     return new Promise(function(resolve, reject){
